@@ -6,8 +6,8 @@ and reported ranges (not assumed +/- percentages) through the model:
     storage-removed to fully-configured]
   - Grid carbon intensity: 250 - 550 g CO2e/kWh [real regional spread]
   - Cellular participation fraction: 0 - 100% [deployment-dependent]
-  - Cellular/Wi-Fi energy ratio: 33 - 104x [RadioTail, measured at realistic
-    FL payload sizes, not the commonly cited but payload-mismatched 5-10x]
+  - Cellular/Wi-Fi energy ratio: ~5 - 11x for a 1 MB upload [Huang12 measured
+    power model, uplink throughput varied 1-10 Mbps on each network]
   - Training cadence: 1 - 24 hours between rounds [realistic FL deployment
     range, charging-window-scheduled through continuous]
   - Edge PUE: 1.5 - 2.0 [commonly cited on-premises server-room range]
@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from real_accounting import (P_ACTIVE_W, P_IDLE_W, ROUND_SECONDS, WIFI_WH_PER_MB, PAYLOAD_MB,
                               SERVER_ACTIVE_W, SERVER_IDLE_FRACTION, CLOUD_PUE,
                               CLOUD_COMPUTE_WH_PER_ROUND, CLOUD_DATA_WH_PER_ROUND,
-                              CLOUD_EMBODIED_SHARE_KG)
+                              CLOUD_EMBODIED_SHARE_KG, CELLULAR_RATIO_LOW, CELLULAR_RATIO_HIGH)
 
 np.random.seed(11)
 
@@ -41,7 +41,7 @@ problem = {
         [910.0, 4288.0],
         [250.0, 550.0],
         [0.0, 1.0],
-        [33.0, 104.0],
+        [CELLULAR_RATIO_LOW, CELLULAR_RATIO_HIGH],
         [1.0, 24.0],
         [1.5, 2.0],
         [20.0, 500.0],

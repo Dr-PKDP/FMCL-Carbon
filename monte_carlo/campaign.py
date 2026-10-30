@@ -45,9 +45,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Table 5's population-scale N; see Section 10.5 for why K is capped
 # independently of N rather than set to p*N)
 # ---------------------------------------------------------------------
-N_POOL = 2000
+N_POOL = int(sys.argv[1]) if len(sys.argv) > 1 else 4000
 P_AVAIL = 0.15            # Definition 1: per-round device availability probability
-K_CAP = 300               # realistic per-round aggregator cap (Section 10.5)
+K_CAP = int(sys.argv[2]) if len(sys.argv) > 2 else 500       # per-round aggregator cap (Section 10.5)
 T_ROUNDS = 2000
 CADENCE_HOURS = 1.0       # hourly rounds, so calendar span equals T_ROUNDS hours
 CELLULAR_FRAC = 0.3       # stochastic per participation event
@@ -115,6 +115,26 @@ def find_crossover(cum_fmcl, cum_other):
     return int(np.argmax(exceeds)) + 1
 
 
+def theorem4_prediction():
+    """Theorem 4's closed-form T*_cloud and T*_edge at the expected participant count
+    E[K] = E[min(X, K_cap)], X ~ Binomial(N_pool, p_avail), and the mean of the
+    log-normal device-power draw, 4.0 * exp(CV^2 / 2)."""
+    from scipy.stats import binom
+    ks = np.arange(0, N_POOL + 1)
+    expected_K = float(np.sum(np.minimum(ks, K_CAP) * binom.pmf(ks, N_POOL, P_AVAIL)))
+    mean_power_w = 4.0 * np.exp(DEVICE_POWER_CV ** 2 / 2)
+    import real_accounting as ra
+    ra.P_ACTIVE_W = mean_power_w
+    c_f = ra.fmcl_per_round(expected_K, cellular_fraction=CELLULAR_FRAC,
+                            cellular_ratio=(CELLULAR_RATIO_LOW + CELLULAR_RATIO_HIGH) / 2)
+    c_e = ra.edge_per_round(inter_round_hours=CADENCE_HOURS)
+    c_c = ra.cloud_per_round()
+    phi_e, phi_c = ra.phi_edge(), ra.phi_cloud()
+    T_edge_star = phi_e / (c_f - c_e) if c_f > c_e else float('inf')
+    T_cloud_star = phi_c / (c_f - c_c) if c_f > c_c else float('inf')
+    return expected_K, mean_power_w, T_edge_star, T_cloud_star
+
+
 if __name__ == "__main__":
     rng_master = np.random.default_rng(RNG_SEED)
     crossovers_edge = []
@@ -150,18 +170,9 @@ if __name__ == "__main__":
         print(f"  Empirical crossover-vs-cloud round: median={np.median(finite_cloud):.0f}, "
               f"90% CI=[{np.percentile(finite_cloud,5):.0f}, {np.percentile(finite_cloud,95):.0f}]")
 
-    # Analytical Theorem 4 prediction at expected values
-    expected_K = min(N_POOL * P_AVAIL, K_CAP)
-    from real_accounting import fmcl_per_round, edge_per_round, cloud_per_round, phi_edge, phi_cloud
-    c_f = fmcl_per_round(int(expected_K), cellular_fraction=CELLULAR_FRAC,
-                          cellular_ratio=(CELLULAR_RATIO_LOW + CELLULAR_RATIO_HIGH) / 2)
-    c_e = edge_per_round(inter_round_hours=CADENCE_HOURS)
-    c_c = cloud_per_round()
-    phi_e, phi_c = phi_edge(), phi_cloud()
-    T_edge_star = phi_e / (c_f - c_e) if c_f > c_e else float('inf')
-    T_cloud_star = phi_c / (c_f - c_c) if c_f > c_c else float('inf')
+    expected_K, mean_power_w, T_edge_star, T_cloud_star = theorem4_prediction()
     print()
-    print(f"Analytical Theorem 4 prediction at E[K]={expected_K:.0f}: "
+    print(f"Analytical Theorem 4 prediction at E[K]={expected_K:.1f}, mean device power {mean_power_w:.2f} W: "
           f"T*_edge={T_edge_star:.0f}, T*_cloud={T_cloud_star:.1f}")
 
     np.savez(os.path.join(HERE, "mc_results.npz"),

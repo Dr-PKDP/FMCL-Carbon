@@ -18,6 +18,7 @@ from real_accounting import fmcl_per_round, edge_per_round, cloud_per_round
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+plt.rcParams.update({"text.color": "black", "axes.labelcolor": "black", "xtick.color": "black", "ytick.color": "black", "axes.edgecolor": "black"})
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 # Panel 1: per-round FMCL rate vs K, at fixed cellular fraction, against edge and cloud
@@ -35,28 +36,29 @@ ax.axhline(c_edge_24h, color="#C1272D", linestyle='--', alpha=0.4, label="c_edge
 ax.axhline(c_cloud_val, color="#6A4C93", linewidth=2.5, label="c_cloud")
 ax.set_xlabel("K: devices contributing per round")
 ax.set_ylabel("Per-round operational carbon (g CO2e)")
+ax.set_ylim(1, 1e4)
 ax.set_yscale("log")
-ax.set_title("K, not network mode, sets whether FMCL\nis even competitive with cloud", fontsize=10)
-ax.legend(fontsize=7, loc="upper left")
+ax.axvline(303, color="black", linewidth=0.8, linestyle="-.")
+ax.text(310, 1.4, "K ≈ 303: c_FMCL = c_cloud (30% cellular)", fontsize=7, va="bottom")
+ax.set_title("Per-round carbon against recruitment K", fontsize=10)
+ax.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3, frameon=False)
 
 # Panel 2: Sobol total-order indices, K included and dominant
 # Values from real_data_sobol.py (seed=11, 2048 base samples, 1000 bootstrap resamples)
 ax2 = axes[1]
 names = ["Server embodied\ncarbon (LCA)", "Grid carbon\nintensity", "Cellular\nfraction",
          "Cellular/Wi-Fi\nenergy ratio", "Training\ncadence", "Edge\nPUE", "K: devices\nper round"]
-ST = [0.000, 0.003, 0.293, 0.092, 0.000, 0.000, 0.839]
+ST = [0.000, 0.002, 0.009, 0.003, 0.000, 0.000, 0.998]
 colors_bar = ["#cfd8e3"] * 7
 colors_bar[2] = "#F18F01"
 colors_bar[3] = "#F4B860"
 colors_bar[6] = "#C1272D"
 ax2.barh(names, ST, color=colors_bar)
 ax2.set_xlabel("Total-order Sobol index $S_T$")
-ax2.set_title("With K properly treated as uncertain,\nit dominates, and Theorem 3 already sets it", fontsize=10)
+ax2.set_title("Sensitivity of the crossover horizon", fontsize=10)
 ax2.set_xlim(0, 1)
 ax2.invert_yaxis()
 
-fig.suptitle("Real-data-grounded architecture comparison (Fairphone 5, Dell R740, LBNL/DOE, Google Cloud PUE)",
-             fontsize=11)
-fig.tight_layout(rect=[0, 0, 1, 0.93])
+fig.tight_layout()
 fig.savefig(os.path.join(HERE, "fig3_real_data.png"), dpi=150)
 print("saved:", os.path.join(HERE, "fig3_real_data.png"))
