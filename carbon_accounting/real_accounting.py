@@ -68,7 +68,11 @@ SOURCES
               representative figure, retained here as the point estimate,
               with a wide band carried into the sensitivity analysis.
 
-[RadioTail]   Radio-tail communication-energy modeling consistent with the
+[Huang12]     J. Huang et al. (2012), "A close examination of performance and power
+              characteristics of 4G LTE networks," MobiSys, doi:10.1145/2307636.2307658.
+              Measured LTE/Wi-Fi power models (Tables 3-4); used for WIFI_WH_PER_MB and
+              the cellular/Wi-Fi ratio below.
+[RadioTail-old] Radio-tail communication-energy modeling consistent with the
               FMCL series' own calibration work: the cellular-to-Wi-Fi
               energy ratio at realistic FL payload sizes (0.1-1 MB) is
               33-104x, not the 5-10x figure that applies only at much
@@ -94,8 +98,20 @@ P_ACTIVE_W = 4.0               # W, representative flagship SoC under sustained 
 P_IDLE_W = 0.75                # W, [Fairphone5]-consistent baseline (27 Wh / 1.5-day charge cycle)
 ROUND_SECONDS = 90.0           # local training interval per device per round
 PAYLOAD_MB = 1.0               # compressed gradient upload, as elsewhere in this paper
-WIFI_WH_PER_MB = 0.005         # Wh/MB, within the 0.001-0.01 Wh/device range already cited [71]
-CELLULAR_RATIO_LOW, CELLULAR_RATIO_HIGH = 33.0, 104.0   # [RadioTail], realistic FL payload sizes
+# Radio energy for one 1 MB upload, from the [Huang12] measured power model
+# (uplink power = alpha_u * x + beta, x in Mbps; fixed promotion + tail energy per transfer):
+#   LTE:   alpha_u = 438.39 mW/Mbps, beta = 1288.04 mW, promotion 1210.7 mW x 260.1 ms, tail 1060.0 mW x 11,576 ms
+#   Wi-Fi: alpha_u = 283.17 mW/Mbps, beta =  132.86 mW, promotion  124.4 mW x  79.1 ms, tail  119.3 mW x    238 ms
+def radio_upload_j(payload_mb, network, mbps):
+    p = {"lte": (438.39, 1288.04, 1.2107 * 0.2601, 1.0600 * 11.576),
+         "wifi": (283.17, 132.86, 0.1244 * 0.0791, 0.1193 * 0.2381)}[network]
+    a, b, promo, tail = p
+    bits = 8.0 * payload_mb
+    return (a * mbps + b) / 1000.0 * (bits / mbps) + promo + tail
+WIFI_WH_PER_MB = radio_upload_j(1.0, "wifi", 5.0) / 3600.0      # ~0.0007 Wh per 1 MB upload at 5 Mbps
+# Cellular/Wi-Fi ratio at 1 MB: LTE and Wi-Fi uplink throughputs each varied over 1-10 Mbps
+CELLULAR_RATIO_LOW = radio_upload_j(1.0, "lte", 10.0) / radio_upload_j(1.0, "wifi", 1.0)    # ~5.1
+CELLULAR_RATIO_HIGH = radio_upload_j(1.0, "lte", 1.0) / radio_upload_j(1.0, "wifi", 10.0)   # ~11
 
 # ---------------------------------------------------------------------
 # Dedicated-edge tier (single representative server; M scales linearly)

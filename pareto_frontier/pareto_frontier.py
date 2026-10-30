@@ -100,6 +100,35 @@ def weighted_sum_recovered(points, front_mask, n_weights=4000):
     return recovered
 
 
+def supported_points(points, front_mask):
+    """Frontier points that minimize some weighted sum w*E_n + (1-w)*C_n,
+    w in [0,1]: the vertices of the lower convex hull of the frontier in the
+    normalized (E, C) plane. Exact check, independent of the weight sweep."""
+    E, Carb = points[:, 2], points[:, 3]
+    E_n = (E - E.min()) / (E.max() - E.min())
+    C_n = (Carb - Carb.min()) / (Carb.max() - Carb.min())
+    idx = np.where(front_mask)[0]
+    idx = idx[np.lexsort((C_n[idx], E_n[idx]))]
+    hull = []
+    for i in idx:
+        while len(hull) >= 2:
+            a, b = hull[-2], hull[-1]
+            cross = (E_n[b] - E_n[a]) * (C_n[i] - C_n[a]) - (C_n[b] - C_n[a]) * (E_n[i] - E_n[a])
+            if cross <= 0:
+                hull.pop()
+            else:
+                break
+        hull.append(i)
+    # keep only the decreasing-C part (lower-left chain)
+    chain = [hull[0]]
+    for i in hull[1:]:
+        if C_n[i] < C_n[chain[-1]]:
+            chain.append(i)
+    mask = np.zeros(len(points), dtype=bool)
+    mask[chain] = True
+    return mask
+
+
 if __name__ == "__main__":
     HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -120,6 +149,11 @@ if __name__ == "__main__":
     print(f"Frontier points weighted-sum never reaches at any weight: "
           f"{front_and_missed.sum()} / {front.sum()}  "
           f"({100*front_and_missed.sum()/front.sum():.1f}% of the true frontier)")
+
+    supported = supported_points(pts, front)
+    print(f"Frontier points supported by some weight (exact lower convex hull): "
+          f"{supported.sum()} / {front.sum()}; unreachable by any weight: "
+          f"{front.sum() - supported.sum()} ({100*(front.sum() - supported.sum())/front.sum():.1f}%)")
 
     np.savez(os.path.join(HERE, "pareto_data.npz"),
              points=pts, front=front, recovered=recovered)
