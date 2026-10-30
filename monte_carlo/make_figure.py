@@ -19,7 +19,8 @@ from real_accounting import (SERVER_ACTIVE_W, SERVER_IDLE_FRACTION, EDGE_PUE, CL
                               I_GRID_POINT, ROUND_SECONDS)
 
 sys.path.insert(0, HERE)
-from campaign import T_ROUNDS, CADENCE_HOURS
+from campaign import T_ROUNDS, CADENCE_HOURS, theorem4_prediction, N_POOL, K_CAP
+_EK, _PW, _TE, T_PRED = theorem4_prediction()
 
 data = np.load(os.path.join(HERE, "mc_results.npz"))
 all_fmcl = data['all_fmcl']            # (M_trials, T_ROUNDS)
@@ -51,28 +52,26 @@ ax.plot(rounds, fmcl_median, color="#2E86AB", linewidth=2, label="FMCL (median t
 ax.plot(rounds, cum_edge, color="#C1272D", linewidth=2, linestyle='--', label="Dedicated edge")
 ax.plot(rounds, cum_cloud, color="#6A4C93", linewidth=2, label="Cloud")
 ax.axvline(np.median(finite_cloud), color="#6A4C93", linestyle=':', alpha=0.7)
-ax.axvline(161.6, color="gray", linestyle=':', alpha=0.7)
+ax.axvline(T_PRED, color="gray", linestyle=':', alpha=0.7)
 ax.set_xlabel("Training round")
 ax.set_ylabel("Cumulative lifecycle carbon (g CO\u2082e)")
 ax.set_yscale("log")
 ax.set_xlim(0, 500)
-ax.set_title("Simulated campaign: cumulative carbon\n(edge never catches up within 2,000 rounds)", fontsize=10)
-ax.legend(fontsize=8, loc="lower right")
+plt.rcParams.update({"text.color": "black"})
+ax.set_title("Cumulative carbon over the campaign", fontsize=10)
+ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False)
 
 ax2 = axes[1]
 ax2.hist(finite_cloud, bins=30, color="#6A4C93", alpha=0.75, label="Empirical crossover round\n(300 simulated trials)")
-ax2.axvline(161.6, color="black", linestyle="--", linewidth=2,
-            label="Theorem 4 analytical prediction\n(161.6 rounds, at E[K]=300)")
+ax2.axvline(T_PRED, color="black", linestyle="--", linewidth=2,
+            label=f"Theorem 4 analytical prediction\n({T_PRED:.1f} rounds, at E[K]={_EK:.0f})")
 ax2.axvline(np.median(finite_cloud), color="gray", linestyle=":", linewidth=2,
             label=f"Simulated median ({np.median(finite_cloud):.0f} rounds)")
 ax2.set_xlabel("Round at which FMCL's cumulative carbon\nfirst exceeds cloud's")
 ax2.set_ylabel("Trials")
-ax2.set_title("Theory vs. simulation:\nclosed form lands inside the empirical distribution", fontsize=10)
-ax2.legend(fontsize=8)
+ax2.set_title("Crossover round: closed form and simulation", fontsize=10)
+ax2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=1, frameon=False)
 
-fig.suptitle("Monte Carlo campaign simulation: stochastic availability, device heterogeneity,\n"
-             "and communication mode, against real hardware data (300 trials, 2,000 rounds each)",
-             fontsize=11)
-fig.tight_layout(rect=[0, 0, 1, 0.90])
+fig.tight_layout()
 fig.savefig(os.path.join(HERE, "fig6_monte_carlo.png"), dpi=150)
 print("saved:", os.path.join(HERE, "fig6_monte_carlo.png"))
