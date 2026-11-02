@@ -10,6 +10,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar, brentq
 
 rng = np.random.default_rng(7)
+rng_cap = np.random.default_rng(11)   # separate stream so the capped check leaves the main draws unchanged
 
 def problem(N, d, sigma, eps, G2=1.0, C2=1.0, LD=1.0):
     B = G2 + d * sigma**2 * C2
@@ -77,9 +78,32 @@ def worked_case():
             lam = (math.sqrt(2 * (kappa + eps_p)) - math.sqrt(2 * kappa)) ** 2
             K = (2 / 0.5) * (1 + d / lam)
             cf, cc, phi = ra.fmcl_per_round(K, cellular_fraction=0.3), ra.cloud_per_round(), ra.phi_cloud()
-            print('%s: T*_cloud %.1f -> %.1f rounds (FMCL schedules, cloud does not)' % (name, phi / (cf - cc), phi / (cf * (1 - q) - cc)))
+            T = 40
+            print('%s: campaign carbon over %d rounds, FMCL %.2f -> %.2f kg CO2e (FMCL schedules), cloud %.2f kg' % (name, T, T * cf / 1e3, T * cf * (1 - q) / 1e3, (phi + T * cc) / 1e3))
     except ImportError:
         print('carbon_accounting not on path; skipping threshold check')
+
+def capped_check(n_draws=2000):
+    """Corollary 2 with an upper cap on p drawn uniformly on (p_min, 1] and a binding window deadline allowed:
+    minimizer >= p0* = max{l, min{2 p_min, u}}, l and u the ends of the admissible interval."""
+    worst, n, binding = np.inf, 0, 0
+    for _ in range(n_draws):
+        N = 10**rng_cap.uniform(3, 7); d = 10**rng_cap.uniform(1, 5)
+        sigma = 10**rng_cap.uniform(-1, 1); eps = rng_cap.uniform(0.1, 3.2)
+        pmin, T, dT = problem(N, d, sigma, eps)
+        if not pmin < 1.0: continue
+        W = int(rng_cap.choice([72, 168, 336]))
+        if rng_cap.random() < 0.5: W = max(3, int(T(2 * pmin) * rng_cap.uniform(0.3, 1.5)))   # short window: deadline can bind
+        I = diurnal(W, phase=rng_cap.uniform(0, 24), noise=0.0) * (1 + rng_cap.uniform(0, 0.15) * rng_cap.standard_normal(W))
+        G, _ = make_G(I)
+        cap = rng_cap.uniform(pmin * (1 + 1e-3), 1.0)
+        lo = pmin * (1 + 1e-6)
+        if T(cap) > W: continue
+        p_lo = brentq(lambda p: T(p) - W, lo, cap) if T(lo) > W else lo
+        r = minimize_scalar(lambda p: p * G(T(p)), bounds=(p_lo, cap), method='bounded', options={'xatol': 1e-12})
+        target = max(p_lo, min(2 * pmin, cap))      # constrained constant-intensity optimum p0* = proj_[l,u](2 pmin)
+        worst = min(worst, r.x / target); n += 1; binding += p_lo > 2 * pmin
+    print('capped-p draws:', n, '(window floor above 2pmin in %d)' % binding, '| min p*/p0*: %.6f' % worst)
 
 if __name__ == '__main__':
     worked_case()
@@ -95,3 +119,4 @@ if __name__ == '__main__':
     print('median / 90th pct / max of p*/(2pmin): %.4f %.4f %.4f' % tuple(np.percentile(rf, [50, 90, 100])))
     inter = [x for x in free if x['interior']]
     print('interior minimizers:', len(inter), '| max |FOC residual|/G: %.2e' % max(abs(x['foc']) for x in inter) if inter else 'none')
+    capped_check()

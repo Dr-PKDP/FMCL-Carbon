@@ -13,26 +13,20 @@ from SALib.analyze import sobol
 
 from sensitivity import SCENARIOS, PARAM_NAMES, bounds_for, t_star_min
 
-# Consistent black-text styling across all manuscript figures.
-mpl.rcParams['text.color'] = 'black'
-mpl.rcParams['axes.labelcolor'] = 'black'
-mpl.rcParams['axes.titlecolor'] = 'black'
-mpl.rcParams['xtick.color'] = 'black'
-mpl.rcParams['ytick.color'] = 'black'
-mpl.rcParams['axes.edgecolor'] = 'black'
-mpl.rcParams['legend.labelcolor'] = 'black'
-mpl.rcParams['figure.titlesize'] = 11
-mpl.rcParams['figure.titleweight'] = 'normal'
+plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
+                     "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
+                     "savefig.dpi": 300})
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 np.random.seed(42)
 
-fig, axes = plt.subplots(2, 2, figsize=(11, 8))
+fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.6))
 
 scenario_meta = [
-    ("activity_recognition", "Activity recognition\n(N=10^6)", axes[0, 0], axes[1, 0], "#2E86AB"),
-    ("healthcare_mitigated", "Healthcare, mitigated\n(N=2x10^5)", axes[0, 1], axes[1, 1], "#A23B72"),
+    ("activity_recognition", "Activity recognition ($N = 10^6$)", axes[0, 0], axes[1, 0], "#2E86AB"),
+    ("healthcare_mitigated", "Healthcare, mitigated ($N = 2\\times10^5$)", axes[0, 1], axes[1, 1], "#A23B72"),
 ]
 
 for key, label, ax_bar, ax_hist, color in scenario_meta:
@@ -46,29 +40,27 @@ for key, label, ax_bar, ax_hist, color in scenario_meta:
 
     display_names = [r"$\Phi_{edge}$", r"$\Phi_{cloud}$", r"$c_{FMCL}$", r"$c_{edge}$", r"$c_{cloud}$"]
     ax_bar.barh(display_names, Si['ST'], color=color)
-    ax_bar.set_xlabel("Total-order Sobol index $S_T$", fontsize=10, color="black")
-    ax_bar.set_title(f"{label}\nWhat drives uncertainty in $T^*_{{min}}$", fontsize=10, color="black")
+    ax_bar.set_xlabel("Total-order Sobol index $S_T$")
+    ax_bar.set_title(f"{label}\nDrivers of uncertainty in $T^*_{{min}}$")
     ax_bar.set_xlim(0, 1)
-    ax_bar.tick_params(labelsize=9.5, colors="black")
+    ax_bar.tick_params(labelsize=8.5, colors="black")
 
-    ax_hist.hist(Y[Y < 1e6], bins=60, color=color, alpha=0.75)
+    Yc = Y[Y < 1e6]
+    ax_hist.hist(Yc, bins=np.geomspace(Yc.min(), Yc.max(), 61), color=color, alpha=0.85)
     # Consistent convention across Fig. 5 and Fig. 6:
     #   black dashed = the paper's analytical point estimate
-    #   grey dotted  = the simulated/empirical median
+    #   orange dotted = the simulated/empirical median
     ax_hist.axvline(point['paper_T_star_min'], color="black", linestyle="--", linewidth=2,
-                     label=f"Paper's point estimate\n({point['paper_T_star_min']:,} rounds)")
+                     label=f"Point estimate ({point['paper_T_star_min']:,} rounds)")
     sim_median = np.median(Y[Y < 1e6])
-    ax_hist.axvline(sim_median, color="gray", linestyle=":", linewidth=2,
-                     label=f"Simulated median\n({sim_median:,.0f} rounds)")
+    ax_hist.axvline(sim_median, color="#ff7f0e", linestyle=":", linewidth=2.4,
+                     label=f"Simulated median ({sim_median:,.0f} rounds)")
     ax_hist.set_xscale("log")
-    ax_hist.set_xlabel(r"$T^*_{min}$ (rounds, log scale)", fontsize=10, color="black")
-    ax_hist.set_ylabel("Frequency", fontsize=10, color="black")
-    ax_hist.tick_params(labelsize=9.5, colors="black")
-    ax_hist.legend(fontsize=8, labelcolor="black")
+    ax_hist.set_xlabel(r"$T^*_{min}$ (rounds, log scale)")
+    ax_hist.set_ylabel("Frequency")
+    ax_hist.tick_params(labelsize=8.5, colors="black")
+    ax_hist.legend(fontsize=8.5, loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=1, frameon=False, handlelength=2.6)
 
-fig.suptitle("Propagating parameter uncertainty through Theorem 4's crossover criterion\n"
-             "(illustrative point estimates from Section 10.3, not the measured figures of Section 10.4)",
-             fontsize=11.5, color="black")
-fig.tight_layout(rect=[0, 0, 1, 0.91])
-fig.savefig(os.path.join(HERE, "fig5_sobol_sensitivity.png"), dpi=150)
-print("saved:", os.path.join(HERE, "fig5_sobol_sensitivity.png"))
+fig.tight_layout()
+fig.savefig(os.path.join(HERE, "fig5_sobol_sensitivity.svg"), bbox_inches="tight")
+print("saved:", os.path.join(HERE, "fig5_sobol_sensitivity.svg"))

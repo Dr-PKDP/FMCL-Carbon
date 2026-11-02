@@ -18,8 +18,12 @@ from real_accounting import fmcl_per_round, edge_per_round, cloud_per_round
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-plt.rcParams.update({"text.color": "black", "axes.labelcolor": "black", "xtick.color": "black", "ytick.color": "black", "axes.edgecolor": "black"})
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
+                     "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
+                     "savefig.dpi": 300})
+fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.9), gridspec_kw={"width_ratios": [1, 0.95]})
 
 # Panel 1: per-round FMCL rate vs K, at fixed cellular fraction, against edge and cloud
 ax = axes[0]
@@ -29,36 +33,39 @@ c_fmcl_cell = [fmcl_per_round(int(k), cellular_fraction=1.0) for k in K_range]
 c_edge_1h = edge_per_round(inter_round_hours=1.0)
 c_edge_24h = edge_per_round(inter_round_hours=24.0)
 c_cloud_val = cloud_per_round()
-ax.plot(K_range, c_fmcl_wifi, '-', color="#2E86AB", linewidth=2.5, label="c_FMCL (Wi-Fi)")
-ax.plot(K_range, c_fmcl_cell, color="#2E86AB", linewidth=2.5, linestyle=':', label="c_FMCL (100% cellular)")
-ax.axhline(c_edge_1h, color="#C1272D", linestyle='--', label="c_edge (hourly rounds)")
-ax.axhline(c_edge_24h, color="#C1272D", linestyle='--', alpha=0.4, label="c_edge (daily rounds)")
-ax.axhline(c_cloud_val, color="#6A4C93", linewidth=2.5, label="c_cloud")
-ax.set_xlabel("K: devices contributing per round")
-ax.set_ylabel("Per-round operational carbon (g CO2e)")
+ax.plot(K_range, c_fmcl_wifi, '-', color="#2E86AB", linewidth=2.5, label=r"$c_{FMCL}$ (Wi-Fi)")
+ax.plot(K_range, c_fmcl_cell, color="#2E86AB", linewidth=2.5, linestyle=':', label=r"$c_{FMCL}$ (100% cellular)")
+ax.axhline(c_edge_1h, color="#C1272D", linewidth=2, linestyle='--', label=r"$c_{edge}$ (hourly rounds)")
+ax.axhline(c_edge_24h, color="#ff7f0e", linewidth=2, linestyle='-.', label=r"$c_{edge}$ (daily rounds)")
+ax.axhline(c_cloud_val, color="#6A4C93", linewidth=2.5, label=r"$c_{cloud}$")
+ax.set_xlabel("$K$: devices per round")
+ax.set_ylabel("Per-round carbon (g CO$_2$e)")
 ax.set_ylim(1, 1e4)
 ax.set_yscale("log")
 ax.axvline(303, color="black", linewidth=0.8, linestyle="-.")
-ax.text(310, 1.4, "K ≈ 303: c_FMCL = c_cloud (30% cellular)", fontsize=7, va="bottom")
-ax.set_title("Per-round carbon against recruitment K", fontsize=10)
-ax.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=3, frameon=False)
+ax.text(296, 620, "$K \\approx 303$:\n$c_{FMCL} = c_{cloud}$\n(30% cellular)", fontsize=8.5, va="center", ha="right")
+ax.set_title("Per-round carbon against $K$")
+ax.legend(fontsize=8.5, loc="upper center", bbox_to_anchor=(0.5, -0.24), ncol=2, frameon=False, handlelength=2.6)
 
 # Panel 2: Sobol total-order indices, K included and dominant
 # Values from real_data_sobol.py (seed=11, 2048 base samples, 1000 bootstrap resamples)
 ax2 = axes[1]
 names = ["Server embodied\ncarbon (LCA)", "Grid carbon\nintensity", "Cellular\nfraction",
-         "Cellular/Wi-Fi\nenergy ratio", "Training\ncadence", "Edge\nPUE", "K: devices\nper round"]
+         "Cellular/Wi-Fi\nenergy ratio", "Training\ncadence", "Edge\nPUE", "$K$: devices\nper round"]
 ST = [0.000, 0.002, 0.009, 0.003, 0.000, 0.000, 0.998]
-colors_bar = ["#cfd8e3"] * 7
+colors_bar = ["#2E86AB"] * 7
 colors_bar[2] = "#F18F01"
-colors_bar[3] = "#F4B860"
+colors_bar[3] = "#F18F01"
 colors_bar[6] = "#C1272D"
 ax2.barh(names, ST, color=colors_bar)
+for y, v in enumerate(ST):     # tiny bars are invisible, so the index is printed beside each one
+    ax2.text(v + 0.012 if v < 0.9 else v - 0.012, y, f"{v:.3f}", va="center", ha="left" if v < 0.9 else "right",
+             fontsize=8.5, color="black" if v < 0.9 else "white")
 ax2.set_xlabel("Total-order Sobol index $S_T$")
-ax2.set_title("Sensitivity of the crossover horizon", fontsize=10)
+ax2.set_title("Sensitivity of crossover horizon")
 ax2.set_xlim(0, 1)
 ax2.invert_yaxis()
 
-fig.tight_layout()
-fig.savefig(os.path.join(HERE, "fig3_real_data.png"), dpi=150)
-print("saved:", os.path.join(HERE, "fig3_real_data.png"))
+fig.subplots_adjust(left=0.085, right=0.985, top=0.93, bottom=0.30, wspace=0.8)
+fig.savefig(os.path.join(HERE, "fig3_real_data.svg"), bbox_inches="tight")
+print("saved:", os.path.join(HERE, "fig3_real_data.svg"))

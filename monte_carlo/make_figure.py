@@ -44,34 +44,44 @@ fmcl_median = np.median(all_fmcl, axis=0)
 fmcl_p5 = np.percentile(all_fmcl, 5, axis=0)
 fmcl_p95 = np.percentile(all_fmcl, 95, axis=0)
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
+                     "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
+                     "savefig.dpi": 300})
+fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4))
 
 ax = axes[0]
-ax.fill_between(rounds, fmcl_p5, fmcl_p95, color="#2E86AB", alpha=0.25, label="FMCL (90% band, 300 trials)")
-ax.plot(rounds, fmcl_median, color="#2E86AB", linewidth=2, label="FMCL (median trajectory)")
+ax.plot(rounds, fmcl_median, color="#2E86AB", linewidth=2, label="FMCL (median, 300 trials)")
 ax.plot(rounds, cum_edge, color="#C1272D", linewidth=2, linestyle='--', label="Dedicated edge")
 ax.plot(rounds, cum_cloud, color="#6A4C93", linewidth=2, label="Cloud")
-ax.axvline(np.median(finite_cloud), color="#6A4C93", linestyle=':', alpha=0.7)
-ax.axvline(T_PRED, color="gray", linestyle=':', alpha=0.7)
+ax.axvline(T_PRED, color="black", linestyle="--", linewidth=1.6, label="Theorem 4 crossover")
+ax.axvline(np.median(finite_cloud), color="#ff7f0e", linestyle=":", linewidth=2.2, label="Simulated median crossover")
 ax.set_xlabel("Training round")
-ax.set_ylabel("Cumulative lifecycle carbon (g CO\u2082e)")
+ax.set_ylabel("Cumulative carbon (g CO$_2$e)")
 ax.set_yscale("log")
 ax.set_xlim(0, 500)
-plt.rcParams.update({"text.color": "black"})
-ax.set_title("Cumulative carbon over the campaign", fontsize=10)
-ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False)
+ax.set_title("Cumulative carbon")
+h, l = ax.get_legend_handles_labels()   # order: FMCL, Dedicated edge, Cloud, Theorem 4 crossover, Simulated median crossover
+blank = plt.Line2D([], [], color="none")
+ax.legend(handles=[h[0], h[1], h[4], h[2], h[3], blank], labels=[l[0], l[1], l[4], l[2], l[3], ""],
+          fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=2, frameon=False,
+          handlelength=2.2, columnspacing=2.2)
+
+band_rel = (fmcl_p95 - fmcl_p5) / fmcl_median
+print(f"FMCL 5th-95th band: {band_rel.min()*100:.1f}%-{band_rel.max()*100:.1f}% of median across rounds")
 
 ax2 = axes[1]
-ax2.hist(finite_cloud, bins=30, color="#6A4C93", alpha=0.75, label="Empirical crossover round\n(300 simulated trials)")
+ax2.hist(finite_cloud, bins=30, color="#6A4C93", alpha=0.85, edgecolor="white", linewidth=0.4, label="Simulated crossover rounds (300 trials)")
 ax2.axvline(T_PRED, color="black", linestyle="--", linewidth=2,
-            label=f"Theorem 4 analytical prediction\n({T_PRED:.1f} rounds, at E[K]={_EK:.0f})")
-ax2.axvline(np.median(finite_cloud), color="gray", linestyle=":", linewidth=2,
+            label=f"Theorem 4 prediction ({T_PRED:.1f}, $E[K]$ = {_EK:.0f})")
+ax2.axvline(np.median(finite_cloud), color="#ff7f0e", linestyle=":", linewidth=2.4,
             label=f"Simulated median ({np.median(finite_cloud):.0f} rounds)")
-ax2.set_xlabel("Round at which FMCL's cumulative carbon\nfirst exceeds cloud's")
+ax2.set_xlabel("Round at which FMCL first exceeds cloud")
 ax2.set_ylabel("Trials")
-ax2.set_title("Crossover round: closed form and simulation", fontsize=10)
-ax2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=1, frameon=False)
+ax2.set_title("Crossover round")
+ax2.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=1, frameon=False, handlelength=2.2)
 
 fig.tight_layout()
-fig.savefig(os.path.join(HERE, "fig6_monte_carlo.png"), dpi=150)
-print("saved:", os.path.join(HERE, "fig6_monte_carlo.png"))
+fig.savefig(os.path.join(HERE, "fig6_monte_carlo.svg"), bbox_inches="tight")
+print("saved:", os.path.join(HERE, "fig6_monte_carlo.svg"))
