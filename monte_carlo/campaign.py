@@ -23,7 +23,7 @@ For each of M independent trials, a campaign of T rounds is simulated:
     and an elastically billed cloud service.
 
 The simulated crossover round (from simulated trajectories, across
-trials) is compared against Theorem 4's closed-form T*_min evaluated at
+trials) is compared against Theorem 3's closed-form T*_min evaluated at
 the expected values of the same random quantities.
 """
 import os
@@ -115,8 +115,8 @@ def find_crossover(cum_fmcl, cum_other):
     return int(np.argmax(exceeds)) + 1
 
 
-def theorem4_prediction():
-    """Theorem 4's closed-form T*_cloud and T*_edge at the expected participant count
+def theorem3_prediction():
+    """Theorem 3's closed-form T*_cloud and T*_edge at the expected participant count
     E[K] = E[min(X, K_cap)], X ~ Binomial(N_pool, p_avail), and the mean of the
     log-normal device-power draw, 4.0 * exp(CV^2 / 2)."""
     from scipy.stats import binom
@@ -170,9 +170,9 @@ if __name__ == "__main__":
         print(f"  Empirical crossover-vs-cloud round: median={np.median(finite_cloud):.0f}, "
               f"90% CI=[{np.percentile(finite_cloud,5):.0f}, {np.percentile(finite_cloud,95):.0f}]")
 
-    expected_K, mean_power_w, T_edge_star, T_cloud_star = theorem4_prediction()
+    expected_K, mean_power_w, T_edge_star, T_cloud_star = theorem3_prediction()
     print()
-    print(f"Analytical Theorem 4 prediction at E[K]={expected_K:.1f}, mean device power {mean_power_w:.2f} W: "
+    print(f"Analytical Theorem 3 prediction at E[K]={expected_K:.1f}, mean device power {mean_power_w:.2f} W: "
           f"T*_edge={T_edge_star:.0f}, T*_cloud={T_cloud_star:.1f}")
 
     np.savez(os.path.join(HERE, "mc_results.npz"),

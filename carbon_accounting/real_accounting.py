@@ -1,5 +1,5 @@
 """
-Real-data-grounded instantiation of Theorem 4's architecture-selection criterion.
+Real-data-grounded instantiation of Theorem 3's architecture-selection criterion.
 
 Every parameter below traces to a cited, published source rather than an
 illustrative round number. Where a source gives a range, both endpoints are

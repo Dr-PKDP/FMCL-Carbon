@@ -1,5 +1,5 @@
 """
-Global sensitivity analysis of Theorem 4's crossover, propagating measured
+Global sensitivity analysis of Theorem 3's crossover, propagating measured
 and reported ranges (not assumed +/- percentages) through the model:
 
   - Server embodied carbon: 910 - 4,288 kg CO2e [DellR740 measured range,

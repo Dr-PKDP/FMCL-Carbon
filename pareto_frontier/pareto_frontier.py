@@ -9,7 +9,7 @@ in turn determines the privacy loss E(T_acc, sigma, p) (Proposition 1)
 and the carbon C(T_acc, p) = c_round * p * T_acc. This reduces the
 three-objective problem to a clean two-objective (privacy vs. carbon)
 frontier at fixed accuracy: exactly the epsilon-constraint framing
-Theorem 3 and Section 8.4's "Reachability of the Frontier" discussion
+Theorem 2 and Section 8.4's "Reachability of the Frontier" discussion
 already argue for over weighted-sum scalarization.
 
 The script (a) sweeps a fine (sigma, p) grid, (b) computes the true
@@ -22,13 +22,13 @@ import os
 
 import numpy as np
 
-# Reuse the activity-recognition parameters already in the paper's Section 10.1
+# Activity-recognition parameters of the paper's Section 10.1
 N = 1e6
 d = 1e4
 G = C = 1.0
-L = D = 1.0
+L, D = 1.0, 5.0           # only the product L*D enters the accuracy surrogate
 eps_acc = 0.5
-kappa = np.log(1 / 1e-5)  # delta = 1e-5, a standard choice; kappa = log(1/delta)
+kappa = np.log(1 / 1e-6)  # delta = 1e-6; kappa = log(1/delta)
 c_round = 1.0
 
 

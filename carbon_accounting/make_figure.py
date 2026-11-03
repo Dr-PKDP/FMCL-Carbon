@@ -59,11 +59,11 @@ colors_bar[3] = "#F18F01"
 colors_bar[6] = "#C1272D"
 ax2.barh(names, ST, color=colors_bar)
 for y, v in enumerate(ST):     # tiny bars are invisible, so the index is printed beside each one
-    ax2.text(v + 0.012 if v < 0.9 else v - 0.012, y, f"{v:.3f}", va="center", ha="left" if v < 0.9 else "right",
-             fontsize=8.5, color="black" if v < 0.9 else "white")
+    ax2.text(v + 0.012, y, f"{v:.3f}", va="center", ha="left", fontsize=8.5, color="black")
 ax2.set_xlabel("Total-order Sobol index $S_T$")
 ax2.set_title("Sensitivity of crossover horizon")
-ax2.set_xlim(0, 1)
+ax2.set_xlim(0, 1.12)
+ax2.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 ax2.invert_yaxis()
 
 fig.subplots_adjust(left=0.085, right=0.985, top=0.93, bottom=0.30, wspace=0.8)

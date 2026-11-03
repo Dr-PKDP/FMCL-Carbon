@@ -1,7 +1,7 @@
 """
 Generates Fig. 6: simulated cumulative carbon for FMCL against edge and
 cloud (left panel), and the simulated crossover-round distribution
-against Theorem 4's closed-form prediction (right panel).
+against Theorem 3's closed-form prediction (right panel).
 
 Run campaign.py first to produce mc_results.npz.
 """
@@ -19,8 +19,8 @@ from real_accounting import (SERVER_ACTIVE_W, SERVER_IDLE_FRACTION, EDGE_PUE, CL
                               I_GRID_POINT, ROUND_SECONDS)
 
 sys.path.insert(0, HERE)
-from campaign import T_ROUNDS, CADENCE_HOURS, theorem4_prediction, N_POOL, K_CAP
-_EK, _PW, _TE, T_PRED = theorem4_prediction()
+from campaign import T_ROUNDS, CADENCE_HOURS, theorem3_prediction, N_POOL, K_CAP
+_EK, _PW, _TE, T_PRED = theorem3_prediction()
 
 data = np.load(os.path.join(HERE, "mc_results.npz"))
 all_fmcl = data['all_fmcl']            # (M_trials, T_ROUNDS)
@@ -55,14 +55,14 @@ ax = axes[0]
 ax.plot(rounds, fmcl_median, color="#2E86AB", linewidth=2, label="FMCL (median, 300 trials)")
 ax.plot(rounds, cum_edge, color="#C1272D", linewidth=2, linestyle='--', label="Dedicated edge")
 ax.plot(rounds, cum_cloud, color="#6A4C93", linewidth=2, label="Cloud")
-ax.axvline(T_PRED, color="black", linestyle="--", linewidth=1.6, label="Theorem 4 crossover")
+ax.axvline(T_PRED, color="black", linestyle="--", linewidth=1.6, label="Theorem 3 crossover")
 ax.axvline(np.median(finite_cloud), color="#ff7f0e", linestyle=":", linewidth=2.2, label="Simulated median crossover")
 ax.set_xlabel("Training round")
 ax.set_ylabel("Cumulative carbon (g CO$_2$e)")
 ax.set_yscale("log")
 ax.set_xlim(0, 500)
 ax.set_title("Cumulative carbon")
-h, l = ax.get_legend_handles_labels()   # order: FMCL, Dedicated edge, Cloud, Theorem 4 crossover, Simulated median crossover
+h, l = ax.get_legend_handles_labels()   # order: FMCL, Dedicated edge, Cloud, Theorem 3 crossover, Simulated median crossover
 blank = plt.Line2D([], [], color="none")
 ax.legend(handles=[h[0], h[1], h[4], h[2], h[3], blank], labels=[l[0], l[1], l[4], l[2], l[3], ""],
           fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=2, frameon=False,
@@ -74,7 +74,7 @@ print(f"FMCL 5th-95th band: {band_rel.min()*100:.1f}%-{band_rel.max()*100:.1f}% 
 ax2 = axes[1]
 ax2.hist(finite_cloud, bins=30, color="#6A4C93", alpha=0.85, edgecolor="white", linewidth=0.4, label="Simulated crossover rounds (300 trials)")
 ax2.axvline(T_PRED, color="black", linestyle="--", linewidth=2,
-            label=f"Theorem 4 prediction ({T_PRED:.1f}, $E[K]$ = {_EK:.0f})")
+            label=f"Theorem 3 prediction ({T_PRED:.1f}, $E[K]$ = {_EK:.0f})")
 ax2.axvline(np.median(finite_cloud), color="#ff7f0e", linestyle=":", linewidth=2.4,
             label=f"Simulated median ({np.median(finite_cloud):.0f} rounds)")
 ax2.set_xlabel("Round at which FMCL first exceeds cloud")

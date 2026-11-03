@@ -11,7 +11,7 @@ import numpy as np
 from SALib.sample import saltelli
 from SALib.analyze import sobol
 
-from sensitivity import SCENARIOS, PARAM_NAMES, bounds_for, t_star_min
+from sensitivity import SCENARIOS, PARAM_NAMES, bounds_for, t_star_min, sobol_response
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
                      "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 np.random.seed(42)
 
-fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.6))
+fig, axes = plt.subplots(2, 2, figsize=(7.2, 5.1))
 
 scenario_meta = [
     ("activity_recognition", "Activity recognition ($N = 10^6$)", axes[0, 0], axes[1, 0], "#2E86AB"),
@@ -36,12 +36,12 @@ for key, label, ax_bar, ax_hist, color in scenario_meta:
     param_values = saltelli.sample(problem, 2048, calc_second_order=False)
     Y = t_star_min(param_values[:, 0], param_values[:, 1], param_values[:, 2],
                     param_values[:, 3], param_values[:, 4])
-    Si = sobol.analyze(problem, Y, calc_second_order=False, print_to_console=False)
+    Si = sobol.analyze(problem, sobol_response(Y), calc_second_order=False, print_to_console=False)
 
     display_names = [r"$\Phi_{edge}$", r"$\Phi_{cloud}$", r"$c_{FMCL}$", r"$c_{edge}$", r"$c_{cloud}$"]
     ax_bar.barh(display_names, Si['ST'], color=color)
     ax_bar.set_xlabel("Total-order Sobol index $S_T$")
-    ax_bar.set_title(f"{label}\nDrivers of uncertainty in $T^*_{{min}}$")
+    ax_bar.set_title(f"{label}\nDrivers of variance in $\\log(1+T^*_{{min}})$")
     ax_bar.set_xlim(0, 1)
     ax_bar.tick_params(labelsize=8.5, colors="black")
 
@@ -52,7 +52,7 @@ for key, label, ax_bar, ax_hist, color in scenario_meta:
     #   orange dotted = the simulated/empirical median
     ax_hist.axvline(point['paper_T_star_min'], color="black", linestyle="--", linewidth=2,
                      label=f"Point estimate ({point['paper_T_star_min']:,} rounds)")
-    sim_median = np.median(Y[Y < 1e6])
+    sim_median = np.median(Y)
     ax_hist.axvline(sim_median, color="#ff7f0e", linestyle=":", linewidth=2.4,
                      label=f"Simulated median ({sim_median:,.0f} rounds)")
     ax_hist.set_xscale("log")
@@ -61,6 +61,6 @@ for key, label, ax_bar, ax_hist, color in scenario_meta:
     ax_hist.tick_params(labelsize=8.5, colors="black")
     ax_hist.legend(fontsize=8.5, loc="upper center", bbox_to_anchor=(0.5, -0.3), ncol=1, frameon=False, handlelength=2.6)
 
-fig.tight_layout()
+fig.tight_layout(h_pad=0.8)
 fig.savefig(os.path.join(HERE, "fig5_sobol_sensitivity.svg"), bbox_inches="tight")
 print("saved:", os.path.join(HERE, "fig5_sobol_sensitivity.svg"))

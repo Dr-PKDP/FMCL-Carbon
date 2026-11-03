@@ -5,7 +5,7 @@ A participating device must stay within its privacy budget at its first
 participation, so T_priv(sigma_max) >= 1 whenever p * T_acc < 1. With
 T_priv(sigma) = lam * sigma^2 and lam = (sqrt(2(kappa + eps_p)) - sqrt(2 kappa))^2,
 Lemma 1's noise ceiling gives K >= (2 / eps_acc) * (G^2 (1 - p) + d C^2 / lam),
-independent of N. Theorem 4 is then evaluated at that K.
+independent of N. Theorem 3 is then evaluated at that K.
 """
 import math
 import real_accounting as ra

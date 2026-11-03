@@ -1,7 +1,7 @@
 """
-Section 11.1: numerical validation of Theorem 3 across many parameter regimes.
+Section 11.1: numerical validation of Theorem 2 across many parameter regimes.
 
-Theorem 3 claims: for fixed sigma and accuracy target eps_acc, the carbon-
+Theorem 2 claims: for fixed sigma and accuracy target eps_acc, the carbon-
 minimizing participation rate is p* = 2*p_min in closed form, where
 p_min = B / (alpha*N),  B = G^2 + d*sigma^2*C^2,  alpha = eps_acc + G^2/N.
 
@@ -36,7 +36,7 @@ def p_min_of(d, sigma, eps_acc, N):
 def carbon(p, d, sigma, eps_acc, N, c_round=1.0):
     """C(p) = c_round * p * T_acc(p); returns +inf outside the feasible region.
     T_acc(p) = 2LD / (alpha - B/(Np)) = 2LD*N*p / (alpha*N*p - B); the
-    paper's own proof of Theorem 3 states both forms, and the second is
+    paper's own proof of Theorem 2 states both forms, and the second is
     used directly here."""
     B = B_of(d, sigma)
     alpha = alpha_of(eps_acc, N)

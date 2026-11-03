@@ -1,5 +1,5 @@
 """
-Section 11.3: global sensitivity analysis of Theorem 4's architecture-
+Section 11.3: global sensitivity analysis of Theorem 3's architecture-
 selection crossover horizon T*_min, applied to the paper's own two worked
 instantiations from Section 10.3 (Table 4: consumer-device activity
 recognition; healthcare, mitigated).
@@ -9,10 +9,16 @@ This uses the same point estimates already in the manuscript's Section
 much does T*_min actually move around under that uncertainty, and which
 input parameter drives the movement?
 
-Theorem 4 (Lemma 3's pairwise form), Phi_FMCL approximately 0 under P1:
+Theorem 3 (Lemma 3's pairwise form), Phi_FMCL approximately 0 under P1:
     T*_a = (Phi_a - Phi_FMCL) / (c_FMCL - c_a),  if c_FMCL > c_a
     T*_a = +inf (FMCL wins at every horizon),     if c_FMCL <= c_a
     T*_min = min(T*_edge, T*_cloud)
+
+A sample is unbounded only when both pairwise thresholds are unbounded.
+Sobol indices are computed on log(1 + min(T*_min, 1e6)), the response used in
+the real-data analysis of Section 10.4, so that samples without a finite
+crossover do not dominate the variance. Percentiles, medians and the
+decision probabilities use T*_min itself.
 
 These are the point estimates the manuscript reports as illustrative
 (Section 10.1-10.3); Section 10.4 replaces them with the real-hardware
@@ -60,6 +66,13 @@ SCENARIOS = {
 
 PARAM_NAMES = ["Phi_edge", "Phi_cloud", "c_FMCL", "c_edge", "c_cloud"]
 
+T_CLIP = 1e6  # rounds; clip applied to the Sobol response only
+
+
+def sobol_response(Y):
+    """Response on which Sobol indices are computed."""
+    return np.log1p(np.minimum(Y, T_CLIP))
+
 
 def bounds_for(point):
     """Literature-grounded +/- ranges around each point estimate."""
@@ -73,7 +86,7 @@ def bounds_for(point):
 
 
 def t_star_min(Phi_edge, Phi_cloud, c_FMCL, c_edge, c_cloud, Phi_FMCL=0.0):
-    """Theorem 4 exactly as stated, including the paper's own convention
+    """Theorem 3 exactly as stated, including the paper's own convention
     that a term is treated as unbounded when c_FMCL <= c_a."""
     BIG = 1e12  # stand-in for "unbounded" so the array stays numeric
     T_edge = np.where(c_FMCL > c_edge, (Phi_edge - Phi_FMCL) / np.maximum(c_FMCL - c_edge, 1e-9), BIG)
@@ -95,16 +108,17 @@ def run_scenario(name, point):
         param_values[:, 0], param_values[:, 1], param_values[:, 2],
         param_values[:, 3], param_values[:, 4],
     )
-    Si = sobol.analyze(problem, Y, calc_second_order=False, print_to_console=False)
+    Si = sobol.analyze(problem, sobol_response(Y), calc_second_order=False,
+                       print_to_console=False, num_resamples=1000)
 
     print(f"\n=== {name} ===")
     print(f"Paper's point-estimate T*_min: {point['paper_T_star_min']:,} rounds")
     print(f"Simulated median T*_min:       {np.median(Y):,.0f} rounds")
     print(f"Simulated 90% interval:        [{np.percentile(Y, 5):,.0f}, {np.percentile(Y, 95):,.0f}] rounds")
-    print(f"Coefficient of variation:      {np.std(Y) / np.mean(Y):.2f}")
-    print(f"{'Parameter':<12}{'S1 (first-order)':>18}{'ST (total-order)':>18}")
+    print(f"Share with no finite crossover: {np.mean(Y >= 1e12):.3f}")
+    print(f"{'Parameter':<12}{'S1 (first-order)':>18}{'ST (total-order)':>18}{'ST 95% CI':>12}")
     for i, p in enumerate(PARAM_NAMES):
-        print(f"{p:<12}{Si['S1'][i]:>18.3f}{Si['ST'][i]:>18.3f}")
+        print(f"{p:<12}{Si['S1'][i]:>18.3f}{Si['ST'][i]:>18.3f}{Si['ST_conf'][i]:>12.3f}")
 
     # Decision-relevant reframing: P(FMCL still favored) at illustrative
     # planning horizons a real deployment might actually commit to.
