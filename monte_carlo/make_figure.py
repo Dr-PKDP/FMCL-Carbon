@@ -47,8 +47,8 @@ fmcl_p95 = np.percentile(all_fmcl, 95, axis=0)
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
                      "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
-                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
-                     "savefig.dpi": 300})
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "path",
+                     "savefig.dpi": 600})
 fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4))
 
 ax = axes[0]

@@ -21,8 +21,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
                      "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
-                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
-                     "savefig.dpi": 300})
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "path",
+                     "savefig.dpi": 600})
 fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.9), gridspec_kw={"width_ratios": [1, 0.95]})
 
 # Panel 1: per-round FMCL rate vs K, at fixed cellular fraction, against edge and cloud
@@ -62,7 +62,7 @@ for y, v in enumerate(ST):     # tiny bars are invisible, so the index is printe
     ax2.text(v + 0.012, y, f"{v:.3f}", va="center", ha="left", fontsize=8.5, color="black")
 ax2.set_xlabel("Total-order Sobol index $S_T$")
 ax2.set_title("Sensitivity of crossover horizon")
-ax2.set_xlim(0, 1.12)
+ax2.set_xlim(0, 1.2)
 ax2.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
 ax2.invert_yaxis()
 

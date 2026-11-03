@@ -26,12 +26,12 @@ front_missed = front & ~recovered
 
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 10, "text.color": "black", "axes.labelcolor": "black",
                      "axes.titlecolor": "black", "xtick.color": "black", "ytick.color": "black",
-                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "none",
-                     "savefig.dpi": 300})
+                     "axes.edgecolor": "black", "legend.labelcolor": "black", "svg.fonttype": "path",
+                     "savefig.dpi": 600})
 fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3))
 
 for ax, xlim, title in [(axes[0], None, "Full frontier (log-log)"),
-                         (axes[1], (2.5, 15), "Zoom: low privacy loss")]:
+                         (axes[1], (7, 15), "Zoom: low privacy loss")]:
     ax.scatter(E[~front], Carb[~front], s=4, color="#aab4c3", alpha=0.6, rasterized=True,
                label="Dominated operating points")
     ax.scatter(E[front_reached], Carb[front_reached], s=30, color="#1f6f9a",
@@ -43,6 +43,7 @@ for ax, xlim, title in [(axes[0], None, "Full frontier (log-log)"),
         ax.set_xscale("log")
     else:
         ax.set_xlim(*xlim)
+        ax.set_xticks([7, 9, 11, 13, 15])
     ax.set_xlabel(r"Privacy loss $\mathcal{E}(T_{acc},\sigma,p)$")
     ax.set_ylabel(r"Carbon $\mathbb{C}(T_{acc},p)$ (log scale)")
     ax.set_title(title)
